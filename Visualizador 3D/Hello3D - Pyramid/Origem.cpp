@@ -27,6 +27,7 @@ using namespace std;
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "Shader.h"
 
 // Protótipo da função de callback de teclado
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
@@ -44,20 +45,6 @@ int loadOBJ(string filepath, int& nVerts);
 // Dimensões da janela (pode ser alterado em tempo de execução)
 const GLuint WIDTH = 1920, HEIGHT = 1080;
 
-// Código fonte do Vertex Shader (em GLSL): ainda hardcoded
-const GLchar* vertexShaderSource = "#version 450\n"
-"layout (location = 0) in vec3 position;\n"
-"layout (location = 1) in vec3 color;\n"
-"uniform mat4 model;\n"
-"uniform mat4 view;\n"
-"uniform mat4 projection;\n"
-"out vec4 finalColor;\n"
-"void main()\n"
-"{\n"
-//...pode ter mais linhas de código aqui!
-"gl_Position = projection * view * model * vec4(position, 1.0);\n"
-"finalColor = vec4(color, 1.0);\n"
-"}\0";
 
 //Códifo fonte do Fragment Shader (em GLSL): ainda hardcoded
 const GLchar* fragmentShaderSource = "#version 450\n"
@@ -88,7 +75,8 @@ float fov = 45.0;
 
 vector <Vertex> vertices;
 vector <GLuint> indices;
-
+vector <glm::vec3> normals;
+vector <glm::vec2> texCoord;
 
 // Função MAIN
 int main()
@@ -145,32 +133,47 @@ int main()
 
 
 	// Compilando e buildando o programa de shader
-	GLuint shaderID = setupShader();
-
-	glUseProgram(shaderID);
+	Shader shader("Phong.vs", "Phong.fs");
 
 	glm::mat4 model = glm::mat4(1); //matriz identidade;
-	GLint modelLoc = glGetUniformLocation(shaderID, "model");
+	GLint modelLoc = glGetUniformLocation(shader.ID, "model");
 	//
 	model = glm::rotate(model, /*(GLfloat)glfwGetTime()*/glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 	glUniformMatrix4fv(modelLoc, 1, FALSE, glm::value_ptr(model));
 
 	//Definindo a matriz de view (posição e orientação da câmera)
 	glm::mat4 view = glm::lookAt(glm::vec3(0.0, 0.0, 3.0), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
-	GLint viewLoc = glGetUniformLocation(shaderID, "view");
+	GLint viewLoc = glGetUniformLocation(shader.ID, "view");
 	glUniformMatrix4fv(viewLoc, 1, FALSE, glm::value_ptr(view));
 
 	//Definindo a matriz de projeção perpectiva
 	glm::mat4 projection = glm::perspective(glm::radians(fov), (GLfloat)width / (GLfloat)height, 0.1f, 100.0f);
-	GLint projLoc = glGetUniformLocation(shaderID, "projection");
+	GLint projLoc = glGetUniformLocation(shader.ID, "projection");
 	glUniformMatrix4fv(projLoc, 1, FALSE, glm::value_ptr(projection));
 
 	glEnable(GL_DEPTH_TEST);
 
 	model = glm::mat4(1);
+	glUseProgram(shader.ID);
+
+	//Definindo as propriedades do material 
+	shader.setFloat("ka", 0.2);
+	shader.setFloat("kd", 0.5);
+	shader.setFloat("ks", 0.5);
+	shader.setFloat("n", 10);
+
+	//Definindo as propriedades da fonte de luz
+	shader.setVec3("lightPos", -2.0f, 100.0f, 2.0f);
+	shader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
+
+
+
+	
 
 	int nVerts;
-	GLuint VAO = loadOBJ("../teapot.obj", nVerts);
+	GLuint VAO = loadOBJ("../Pikachu.obj", nVerts);
+
+	glEnable(GL_DEPTH_TEST);
 
 	// Loop da aplicação - "game loop"
 	while (!glfwWindowShouldClose(window))
@@ -183,7 +186,7 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		glLineWidth(5);
-		glPointSize(5);
+		glPointSize(0);
 
 		float xRotation = 0.0;
 		float yRotation = 0.0;
@@ -418,69 +421,23 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 }
 
 
-//Esta função está basntante hardcoded - objetivo é compilar e "buildar" um programa de
-// shader simples e único neste exemplo de código
-// O código fonte do vertex e fragment shader está nos arrays vertexShaderSource e
-// fragmentShader source no iniçio deste arquivo
-// A função retorna o identificador do programa de shader
-int setupShader()
-{
-	// Vertex shader
-	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-	glCompileShader(vertexShader);
-	// Checando erros de compilação (exibição via log no terminal)
-	GLint success;
-	GLchar infoLog[512];
-	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-	if (!success)
-	{
-		glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-		std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-	}
-	// Fragment shader
-	GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-	glCompileShader(fragmentShader);
-	// Checando erros de compilação (exibição via log no terminal)
-	glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-	if (!success)
-	{
-		glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-		std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
-	}
-	// Linkando os shaders e criando o identificador do programa de shader
-	GLuint shaderProgram = glCreateProgram();
-	glAttachShader(shaderProgram, vertexShader);
-	glAttachShader(shaderProgram, fragmentShader);
-	glLinkProgram(shaderProgram);
-	// Checando por erros de linkagem
-	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-	if (!success) {
-		glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-		std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
-	}
-	glDeleteShader(vertexShader);
-	glDeleteShader(fragmentShader);
-
-	return shaderProgram;
-}
-
 // Esta função está bastante harcoded - objetivo é criar os buffers que armazenam a 
 // geometria de um triângulo
 // Apenas atributo coordenada nos vértices
 // 1 VBO com as coordenadas, VAO com apenas 1 ponteiro para atributo
 // A função retorna o identificador do VAO
 
-int loadOBJ(string filepath, int& nVerts)
+int loadOBJ(string filePath, int& nVerts)
 {
-	vector <GLfloat> vbuffer;
 	ifstream inputFile;
-	inputFile.open(filepath.c_str());
+	inputFile.open(filePath);
+	vector <GLfloat> vertbuffer;
+
 	if (inputFile.is_open())
 	{
 		char line[100];
 		string sline;
+
 
 		while (!inputFile.eof())
 		{
@@ -488,73 +445,105 @@ int loadOBJ(string filepath, int& nVerts)
 			sline = line;
 
 			string word;
+			istringstream ssline(sline);
 
-			istringstream ssline(line);
 			ssline >> word;
 
 			if (word == "v")
 			{
 				Vertex v;
-
 				ssline >> v.position.x >> v.position.y >> v.position.z;
-				v.color.r = 1.0;  v.color.g = 0.0;  v.color.b = 0.0;
-
+				v.color.r = 1.0; v.color.g = 0.0; v.color.b = 0.0;
 				vertices.push_back(v);
 			}
-			if (word == "f")
+			if (word == "vt")
+			{
+				glm::vec2 vt;
+				ssline >> vt.s >> vt.t;
+				texCoord.push_back(vt);
+			}
+			if (word == "vn")
+			{
+				glm::vec3 vn;
+				ssline >> vn.x >> vn.y >> vn.z;
+				normals.push_back(vn);
+			}
+			else if (word == "f")
 			{
 				string tokens[3];
-
-				ssline >> tokens[0] >> tokens[1] >> tokens[2];
-
 				for (int i = 0; i < 3; i++)
 				{
+					ssline >> tokens[i];
 					int pos = tokens[i].find("/");
 					string token = tokens[i].substr(0, pos);
 					int index = atoi(token.c_str()) - 1;
-					cout << vertices[index].position.x << "  " << vertices[index].position.y << " " << vertices[index].position.z << endl;
-					vbuffer.push_back(vertices[index].position.x);
-					vbuffer.push_back(vertices[index].position.y);
-					vbuffer.push_back(vertices[index].position.z);
-					vbuffer.push_back(vertices[index].color.r);
-					vbuffer.push_back(vertices[index].color.g);
-					vbuffer.push_back(vertices[index].color.b);
+					indices.push_back(index);
+					vertbuffer.push_back(vertices[index].position.x);
+					vertbuffer.push_back(vertices[index].position.y);
+					vertbuffer.push_back(vertices[index].position.z);
+					vertbuffer.push_back(vertices[index].color.r);
+					vertbuffer.push_back(vertices[index].color.g);
+					vertbuffer.push_back(vertices[index].color.b);
+
+					tokens[i] = tokens[i].substr(pos + 1);
+					pos = tokens[i].find("/");
+					token = tokens[i].substr(0, pos);
+					int indexT = atoi(token.c_str()) - 1;
+
+					vertbuffer.push_back(texCoord[indexT].s);
+					vertbuffer.push_back(texCoord[indexT].t);
+
+					tokens[i] = tokens[i].substr(pos + 1);
+					token = tokens[i].substr(0, pos);
+					int indexN = atoi(token.c_str()) - 1;
+
+					vertbuffer.push_back(normals[indexN].x);
+					vertbuffer.push_back(normals[indexN].y);
+					vertbuffer.push_back(normals[indexN].z);
 
 				}
+
 			}
 
 		}
 
+		inputFile.close();
 	}
 	else
 	{
-		cout << "Problema ao encontrar o arquivo " << filepath << endl;
+		cout << "Problema ao encontrar o arquivo " << filePath << endl;
 	}
-	inputFile.close();
+
 
 	GLuint VBO, VAO;
 
-	nVerts = vbuffer.size() / 6;
+	nVerts = vertbuffer.size() / 11;
 
 	glGenBuffers(1, &VBO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-	glBufferData(GL_ARRAY_BUFFER, vbuffer.size() * sizeof(GLfloat), vbuffer.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, vertbuffer.size() * sizeof(GLfloat), vertbuffer.data(), GL_STATIC_DRAW);
 
 	glGenVertexArrays(1, &VAO);
 
 	glBindVertexArray(VAO);
 
-	//Pos xyz
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
+	//Pos x, y, z
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(0);
 
-	//Cor rgb
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+	//Cor r, g,b
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
 	glEnableVertexAttribArray(1);
 
+	//Text coords s, t
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(2);
 
+	//Normal x, y, z
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (GLvoid*)(8 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(3);
 
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
