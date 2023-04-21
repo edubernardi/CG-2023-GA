@@ -43,7 +43,7 @@ int setupShader();
 int loadOBJ(string filepath, int& nVerts);
 
 // Dimensões da janela (pode ser alterado em tempo de execução)
-const GLuint WIDTH = 1920, HEIGHT = 1080;
+const GLuint WIDTH = 600, HEIGHT = 600;
 
 
 //Códifo fonte do Fragment Shader (em GLSL): ainda hardcoded
@@ -160,11 +160,12 @@ int main()
 	shader.setFloat("ka", 0.2);
 	shader.setFloat("kd", 0.5);
 	shader.setFloat("ks", 0.5);
+	shader.setFloat("q", 10.0);
 	shader.setFloat("n", 10);
 
 	//Definindo as propriedades da fonte de luz
-	shader.setVec3("lightPos", -2.0f, 100.0f, 2.0f);
-	shader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
+	shader.setVec3("lightPos", 10, 5, 0);
+	shader.setVec3("lightColor", 5.0f, 5.0f, 5.0f);
 
 
 
@@ -174,6 +175,9 @@ int main()
 	GLuint VAO = loadOBJ("../Pikachu.obj", nVerts);
 
 	glEnable(GL_DEPTH_TEST);
+
+	float light_y = -10;
+	float light_x = -10;
 
 	// Loop da aplicação - "game loop"
 	while (!glfwWindowShouldClose(window))
@@ -191,6 +195,24 @@ int main()
 		float xRotation = 0.0;
 		float yRotation = 0.0;
 		float zRotation = 0.0;
+
+		
+		if (light_x > 10) {
+			speed *= -1;
+		} else if (light_x < -10) {
+			speed *= -1;
+		}
+		
+		light_x += speed;
+		light_y = sqrt(-(light_x * light_x) + 100);
+
+		if (speed < 0) {
+			light_y *= -1;
+		}
+		
+		
+		shader.setVec3("lightPos", light_x, light_y, 0);
+
 
 		if (rotateX)
 		{
@@ -268,8 +290,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	{
 		speed -= 0.1;
 	}
-
-	cout << "\nSpeed:" << speed;
 
 	if (key == GLFW_KEY_X && action == GLFW_PRESS)
 	{
@@ -374,7 +394,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
 	float sensitivity = 0.05;
-	// cout << xpos << " " << ypos << endl;
 
 	if (firstMouse)
 	{
@@ -399,20 +418,6 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 	front.y = sin(glm::radians(pitch));
 	front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
 	cameraFront = glm::normalize(front);
-
-	/*
-	cout << "\nCameraPos x:" << cameraPos.x;
-	cout << "\nCameraPos y:" << cameraPos.y;
-	cout << "\nCameraPos z:" << cameraPos.z;
-
-	cout << "\nCameraFront x:" << cameraFront.x;
-	cout << "\nCameraFront y:" << cameraFront.y;
-	cout << "\nCameraFront z:" << cameraFront.z;
-
-	cout << "\nCameraUp x:" << cameraUp.x;
-	cout << "\nCameraUp y:" << cameraUp.y;
-	cout << "\nCameraUp z:" << cameraUp.z;
-	*/
 }
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
@@ -453,7 +458,7 @@ int loadOBJ(string filePath, int& nVerts)
 			{
 				Vertex v;
 				ssline >> v.position.x >> v.position.y >> v.position.z;
-				v.color.r = 1.0; v.color.g = 0.0; v.color.b = 0.0;
+				v.color.r = 0.46; v.color.g = 0.38; v.color.b = 0.16;
 				vertices.push_back(v);
 			}
 			if (word == "vt")
