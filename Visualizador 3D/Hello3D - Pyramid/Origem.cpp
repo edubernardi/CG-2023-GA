@@ -28,6 +28,7 @@ using namespace std;
 #include <glm/gtc/type_ptr.hpp>
 
 #include "Shader.h"
+#include "Mesh.h"
 
 // Protótipo da função de callback de teclado
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
@@ -160,19 +161,31 @@ int main()
 	shader.setFloat("ka", 0.2);
 	shader.setFloat("kd", 0.5);
 	shader.setFloat("ks", 0.5);
-	shader.setFloat("q", 10.0);
-	shader.setFloat("n", 10);
+	shader.setFloat("q", 100);
+	shader.setFloat("n", 0.2);
 
 	//Definindo as propriedades da fonte de luz
 	shader.setVec3("lightPos", 10, 5, 0);
 	shader.setVec3("lightColor", 5.0f, 5.0f, 5.0f);
 
+	
 
 
 	
 
 	int nVerts;
 	GLuint VAO = loadOBJ("../Pikachu.obj", nVerts);
+
+
+	Mesh pikachu;
+	//mandar cor pro shader
+	pikachu.initialize(VAO, nVerts, &shader);
+
+	Mesh pikachu2;
+	pikachu2.initialize(VAO, nVerts, &shader, glm::vec3(3.0, 0, 0.0));
+
+	
+
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -247,6 +260,7 @@ int main()
 
 		glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 		glUniformMatrix4fv(viewLoc, 1, FALSE, glm::value_ptr(view));
+		
 
 		glm::mat4 projection = glm::perspective(glm::radians(fov), (GLfloat)width / (GLfloat)height, 0.1f, 100.0f);
 		glUniformMatrix4fv(projLoc, 1, FALSE, glm::value_ptr(projection));
@@ -254,14 +268,22 @@ int main()
 		// Chamada de desenho - drawcall
 		// Poligono Preenchido - GL_TRIANGLES
 
-		glBindVertexArray(VAO);
-		glDrawArrays(GL_TRIANGLES, 0, nVerts);
+		pikachu.update();
+		pikachu.draw();
+		
+
+		pikachu2.update();
+		pikachu2.draw();
+
+
+		//glBindVertexArray(VAO);
+		//glDrawArrays(GL_TRIANGLES, 0, nVerts);
 
 		// Chamada de desenho - drawcall
 		// CONTORNO - GL_LINE_LOOP
 
-		glDrawArrays(GL_POINTS, 0, nVerts);
-		glBindVertexArray(0);
+		//glDrawArrays(GL_POINTS, 0, nVerts);
+		//glBindVertexArray(0);
 
 		// Troca os buffers da tela
 		glfwSwapBuffers(window);
