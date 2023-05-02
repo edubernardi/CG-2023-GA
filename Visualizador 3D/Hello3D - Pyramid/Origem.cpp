@@ -1,9 +1,9 @@
-/* Hello Triangle - cÛdigo adaptado de https://learnopengl.com/#!Getting-started/Hello-Triangle
+/* Hello Triangle - c√≥digo adaptado de https://learnopengl.com/#!Getting-started/Hello-Triangle
  *
  * Adaptado por Rossana Baptista Queiroz
- * para a disciplina de Processamento Gr·fico/ComputaÁ„o Gr·fica - Unisinos
- * Vers„o inicial: 7/4/2017
- * ⁄ltima atualizaÁ„o em 01/03/2023
+ * para a disciplina de Processamento Gr√°fico/Computa√ß√£o Gr√°fica - Unisinos
+ * Vers√£o inicial: 7/4/2017
+ * √öltima atualiza√ß√£o em 01/03/2023
  *
  */
 
@@ -30,7 +30,7 @@ using namespace std;
 #include "Shader.h"
 #include "Mesh.h"
 
-// ProtÛtipo da funÁ„o de callback de teclado
+// Prot√≥tipo da fun√ß√£o de callback de teclado
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 
 // mouse callback
@@ -39,15 +39,16 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 // scroll callback
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
-// ProtÛtipos das funÁıes
-int setupShader();
+vector <string> readModels();
+
+// Prot√≥tipos das fun√ß√µes
 int loadOBJ(string filepath, int& nVerts);
 
-// Dimensıes da janela (pode ser alterado em tempo de execuÁ„o)
-const GLuint WIDTH = 600, HEIGHT = 600;
+// Dimens√µes da janela (pode ser alterado em tempo de execu√ß√£o)
+const GLuint WIDTH = 1200, HEIGHT = 1200;
 
 
-//CÛdifo fonte do Fragment Shader (em GLSL): ainda hardcoded
+//C√≥difo fonte do Fragment Shader (em GLSL): ainda hardcoded
 const GLchar* fragmentShaderSource = "#version 450\n"
 "in vec4 finalColor;\n"
 "out vec4 color;\n"
@@ -63,31 +64,38 @@ struct Vertex
 };
 
 bool rotateX = false, rotateY = false, rotateZ = false;
-glm::vec3 cameraPos = glm::vec3(0.0, 0.0, 3.0);
+bool translateF = false, translateG = false, translateH = false;
+
+glm::vec3 cameraPos = glm::vec3(0.0, 2.0, 8.0);
 glm::vec3 cameraFront = glm::vec3(0.0, 0.0, -1.0);
 glm::vec3 cameraUp = glm::vec3(0.0, 1.0, 0.0);
-float speed = 0.05;
 
+float speed = 0.05;
 bool firstMouse = true;
 float lastX = 0.0, lastY = 0.0;
 float yaw = -90.0, pitch = 0.0;
-
 float fov = 45.0;
+//int opcao[3];
+
 
 vector <Vertex> vertices;
 vector <GLuint> indices;
 vector <glm::vec3> normals;
 vector <glm::vec2> texCoord;
+vector <Mesh> models;
 
-// FunÁ„o MAIN
+int selected = 0;
+
+
+// Fun√ß√£o MAIN
 int main()
 {
-	// InicializaÁ„o da GLFW
+	// Inicializa√ß√£o da GLFW
 	glfwInit();
 
-	//Muita atenÁ„o aqui: alguns ambientes n„o aceitam essas configuraÁıes
-	//VocÍ deve adaptar para a vers„o do OpenGL suportada por sua placa
-	//Sugest„o: comente essas linhas de cÛdigo para desobrir a vers„o e
+	//Muita aten√ß√£o aqui: alguns ambientes n√£o aceitam essas configura√ß√µes
+	//Voc√™ deve adaptar para a vers√£o do OpenGL suportada por sua placa
+	//Sugest√£o: comente essas linhas de c√≥digo para desobrir a vers√£o e
 	//depois atualize (por exemplo: 4.5 com 4 e 5)
 	//glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	//glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
@@ -98,11 +106,11 @@ int main()
 	//	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 	//#endif
 
-	// CriaÁ„o da janela GLFW
+	// Cria√ß√£o da janela GLFW
 	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Visualizador 3D", nullptr, nullptr);
 	glfwMakeContextCurrent(window);
 
-	// Fazendo o registro da funÁ„o de callback para a janela GLFW
+	// Fazendo o registro da fun√ß√£o de callback para a janela GLFW
 	glfwSetKeyCallback(window, key_callback);
 
 	//callback do mouse
@@ -114,20 +122,20 @@ int main()
 	//desabilitando cursor mouse
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-	// GLAD: carrega todos os ponteiros d funÁıes da OpenGL
+	// GLAD: carrega todos os ponteiros d fun√ß√µes da OpenGL
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
 		std::cout << "Failed to initialize GLAD" << std::endl;
 
 	}
 
-	// Obtendo as informaÁıes de vers„o
+	// Obtendo as informa√ß√µes de vers√£o
 	const GLubyte* renderer = glGetString(GL_RENDERER); /* get renderer string */
 	const GLubyte* version = glGetString(GL_VERSION); /* version as a string */
 	cout << "Renderer: " << renderer << endl;
 	cout << "OpenGL version supported " << version << endl;
 
-	// Definindo as dimensıes da viewport com as mesmas dimensıes da janela da aplicaÁ„o
+	// Definindo as dimens√µes da viewport com as mesmas dimens√µes da janela da aplica√ß√£o
 	int width, height;
 	glfwGetFramebufferSize(window, &width, &height);
 	glViewport(0, 0, width, height);
@@ -142,12 +150,12 @@ int main()
 	model = glm::rotate(model, /*(GLfloat)glfwGetTime()*/glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 	glUniformMatrix4fv(modelLoc, 1, FALSE, glm::value_ptr(model));
 
-	//Definindo a matriz de view (posiÁ„o e orientaÁ„o da c‚mera)
+	//Definindo a matriz de view (posi√ß√£o e orienta√ß√£o da c√¢mera)
 	glm::mat4 view = glm::lookAt(glm::vec3(0.0, 0.0, 3.0), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
 	GLint viewLoc = glGetUniformLocation(shader.ID, "view");
 	glUniformMatrix4fv(viewLoc, 1, FALSE, glm::value_ptr(view));
 
-	//Definindo a matriz de projeÁ„o perpectiva
+	//Definindo a matriz de proje√ß√£o perpectiva
 	glm::mat4 projection = glm::perspective(glm::radians(fov), (GLfloat)width / (GLfloat)height, 0.1f, 100.0f);
 	GLint projLoc = glGetUniformLocation(shader.ID, "projection");
 	glUniformMatrix4fv(projLoc, 1, FALSE, glm::value_ptr(projection));
@@ -168,34 +176,29 @@ int main()
 	shader.setVec3("lightPos", 10, 5, 0);
 	shader.setVec3("lightColor", 5.0f, 5.0f, 5.0f);
 
-	
-
-
-	
-
-	int nVerts;
-	GLuint VAO = loadOBJ("../Pikachu.obj", nVerts);
-
-
-	Mesh pikachu;
-	//mandar cor pro shader
-	pikachu.initialize(VAO, nVerts, &shader);
-
-	Mesh pikachu2;
-	pikachu2.initialize(VAO, nVerts, &shader, glm::vec3(3.0, 0, 0.0));
-
-	
-
+	vector <string> modelNames = readModels();
+	GLuint VAO;
+	for (int i = 0; i < modelNames.size(); i++) {
+		int nVerts;
+		VAO = loadOBJ("../" + modelNames[i], nVerts);
+		if (VAO != -1) {
+			Mesh mesh;
+			mesh.initialize(VAO, nVerts, &shader, glm::vec3(3.0 * i, 0, 0.0), glm::vec3(0.46, 0.38, 0.16));
+			models.push_back(mesh);
+		}
+	}
 
 	glEnable(GL_DEPTH_TEST);
 
 	float light_y = -10;
 	float light_x = -10;
 
-	// Loop da aplicaÁ„o - "game loop"
+	
+
+	// Loop da aplica√ß√£o - "game loop"
 	while (!glfwWindowShouldClose(window))
 	{
-		// Checa se houveram eventos de input (key pressed, mouse moved etc.) e chama as funÁıes de callback correspondentes
+		// Checa se houveram eventos de input (key pressed, mouse moved etc.) e chama as fun√ß√µes de callback correspondentes
 		glfwPollEvents();
 
 		// Limpa o buffer de cor
@@ -205,103 +208,160 @@ int main()
 		glLineWidth(5);
 		glPointSize(0);
 
-		float xRotation = 0.0;
-		float yRotation = 0.0;
-		float zRotation = 0.0;
 
-		
+		//giro da luz
 		if (light_x > 10) {
 			speed *= -1;
-		} else if (light_x < -10) {
+		}
+		else if (light_x < -10) {
 			speed *= -1;
 		}
-		
+
 		light_x += speed;
 		light_y = sqrt(-(light_x * light_x) + 100);
 
 		if (speed < 0) {
 			light_y *= -1;
 		}
-		
-		
+
 		shader.setVec3("lightPos", light_x, light_y, 0);
 
 
-		if (rotateX)
-		{
-			xRotation = speed;
+		float angle = (GLfloat)glfwGetTime() * 2;
 
-		}
-		else {
-			xRotation = 0.0;
-		}
-		if (rotateY)
-		{
-			yRotation = speed;
 
-		}
-		else {
-			yRotation = 0.0;
-		}
-		if (rotateZ)
-		{
-			zRotation = speed;
 
-		}
-		else {
-			zRotation = 0.0;
+		/*
+		int i = 0;
+
+		while (i <= 2) {
+			if (opcao[i] == 7) {
+
+				//Transla√ß√£o
+				if (translateF) {
+
+					desenho[0].initialize(VAO, nVerts, &shader, glm::vec3(1.0, 0.0, 0.0));
+					i++;
+				}
+				else if (translateG)
+				{
+					desenho[0].initialize(VAO, nVerts, &shader, glm::vec3(0.0, 1.0, 0.0));
+					i++;
+				}
+				else if (translateH)
+				{
+					desenho[0].initialize(VAO, nVerts, &shader, glm::vec3(0.0, 0.0, 1.0));
+					i++;
+				}
+
+				//Rota√ß√£o
+				if (rotateX) {
+
+					desenho[0].initialize(VAO, nVerts, &shader, glm::vec3(0.0, 0.0, 0.0), glm::vec3(1.0, 1.0, 1.0), angle, glm::vec3(1.0f, 0.0f, 0.0f));
+					i++;
+				}
+				else if (rotateY)
+				{
+					desenho[0].initialize(VAO, nVerts, &shader, glm::vec3(0.0, 0.0, 0.0), glm::vec3(1.0, 1.0, 1.0), angle, glm::vec3(0.0f, 1.0f, 0.0f));
+					i++;
+				}
+				else if (rotateZ)
+				{
+					desenho[0].initialize(VAO, nVerts, &shader, glm::vec3(0.0, 0.0, 0.0), glm::vec3(1.0, 1.0, 1.0), angle, glm::vec3(0.0f, 0.0f, 1.0f));
+					i++;
+				}
+			}
+
+			else if (opcao[i] == 8) {
+
+				//Transla√ß√£o
+				if (translateF)
+				{
+					desenho[1].initialize(VAO, nVerts, &shader, glm::vec3(3.0, 0.0, 0.0));
+					i++;
+				}
+
+				else if (translateG)
+				{
+					desenho[1].initialize(VAO, nVerts, &shader, glm::vec3(0.0, 3.0, 0.0));
+					i++;
+				}
+
+				else if (translateH)
+				{
+					desenho[1].initialize(VAO, nVerts, &shader, glm::vec3(0.0, 0.0, 3.0));
+					i++;
+				}
+
+
+				//Rota√ß√£o
+				if (rotateX)
+				{
+					desenho[1].initialize(VAO, nVerts, &shader, glm::vec3(3.0, 0.0, 0.0), glm::vec3(1.0, 1.0, 1.0), angle, glm::vec3(1.0f, 0.0f, 0.0f));
+					i++;
+				}
+
+				else if (rotateY)
+				{
+					desenho[1].initialize(VAO, nVerts, &shader, glm::vec3(3.0, 0.0, 0.0), glm::vec3(1.0, 1.0, 1.0), angle, glm::vec3(0.0f, 1.0f, 0.0f));
+					i++;
+				}
+
+				else if (rotateZ)
+				{
+					desenho[1].initialize(VAO, nVerts, &shader, glm::vec3(3.0, 0.0, 0.0), glm::vec3(1.0, 1.0, 1.0), angle, glm::vec3(0.0f, 0.0f, 1.0f));
+					i++;
+				}
+			}
+			i++;
 		}
 
-		if (rotateX || rotateY || rotateZ) {
-			model = glm::rotate(model, speed, glm::vec3(float(xRotation), float(yRotation), float(zRotation)));
-		}
 
+
+		*/
 		glUniformMatrix4fv(modelLoc, 1, FALSE, glm::value_ptr(model));
 
 		glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 		glUniformMatrix4fv(viewLoc, 1, FALSE, glm::value_ptr(view));
-		
+
 
 		glm::mat4 projection = glm::perspective(glm::radians(fov), (GLfloat)width / (GLfloat)height, 0.1f, 100.0f);
 		glUniformMatrix4fv(projLoc, 1, FALSE, glm::value_ptr(projection));
 
-		// Chamada de desenho - drawcall
-		// Poligono Preenchido - GL_TRIANGLES
-
-		pikachu.update();
-		pikachu.draw();
 		
 
-		pikachu2.update();
-		pikachu2.draw();
-
-
-		//glBindVertexArray(VAO);
-		//glDrawArrays(GL_TRIANGLES, 0, nVerts);
-
 		// Chamada de desenho - drawcall
-		// CONTORNO - GL_LINE_LOOP
-
-		//glDrawArrays(GL_POINTS, 0, nVerts);
-		//glBindVertexArray(0);
-
+		for (int i = 0; i < models.size(); i++) {
+			if (i == selected) {
+				models[i].color = glm::vec3(0.1, 0.1, 0.3);
+			}
+			else {
+				models[i].color = glm::vec3(0.46, 0.38, 0.16);
+			}
+			models[i].update();
+			models[i].draw();
+			i++;
+		}
+		
 		// Troca os buffers da tela
 		glfwSwapBuffers(window);
 	}
 	// Pede pra OpenGL desalocar os buffers
 	glDeleteVertexArrays(1, &VAO);
-	// Finaliza a execuÁ„o da GLFW, limpando os recursos alocados por ela
+	// Finaliza a execu√ß√£o da GLFW, limpando os recursos alocados por ela
 	glfwTerminate();
 	return 0;
 }
 
-// FunÁ„o de callback de teclado - sÛ pode ter uma inst‚ncia (deve ser est·tica se
-// estiver dentro de uma classe) - … chamada sempre que uma tecla for pressionada
+// Fun√ß√£o de callback de teclado - s√≥ pode ter uma inst√¢ncia (deve ser est√°tica se
+// estiver dentro de uma classe) - √â chamada sempre que uma tecla for pressionada
 // ou solta via GLFW
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GL_TRUE);
+
+	/*
 
 	if (key == GLFW_KEY_P && (action == GLFW_PRESS))
 	{
@@ -315,33 +375,47 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 	if (key == GLFW_KEY_X && action == GLFW_PRESS)
 	{
-		if (rotateX) {
-			rotateX = false;
-		}
-		else {
-			rotateX = true;
-		}
+		rotateX = true;
+		rotateY = false;
+		rotateZ = false;
 	}
 
 	if (key == GLFW_KEY_Y && action == GLFW_PRESS)
 	{
-		if (rotateY) {
-			rotateY = false;
-		}
-		else {
-			rotateY = true;
-		}
+		rotateX = false;
+		rotateY = true;
+		rotateZ = false;
 	}
 
 	if (key == GLFW_KEY_Z && action == GLFW_PRESS)
 	{
-		if (rotateZ) {
-			rotateZ = false;
-		}
-		else {
-			rotateZ = true;
-		}
+		rotateX = false;
+		rotateY = false;
+		rotateZ = true;
 	}
+
+
+	if (key == GLFW_KEY_F && action == GLFW_PRESS)
+	{
+		translateF = true;
+		translateG = false;
+		translateH = false;
+	}
+
+	if (key == GLFW_KEY_G && action == GLFW_PRESS)
+	{
+		translateF = false;
+		translateG = true;
+		translateH = false;
+	}
+
+	if (key == GLFW_KEY_H && action == GLFW_PRESS)
+	{
+		translateF = false;
+		translateG = false;
+		translateH = true;
+	}
+	*/
 
 	if (key == GLFW_KEY_W)
 	{
@@ -362,16 +436,16 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	{
 		cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * float(0.1);
 	}
-
-	//vis„o superior
-	if (key == GLFW_KEY_1) 
+	/*
+	//vis√£o superior
+	if (key == GLFW_KEY_1)
 	{
 		cameraPos = glm::vec3(0.0, 5.0, 0.0);
 		cameraUp = glm::vec3(0.0, 1.0, 0.0);
 		cameraFront = glm::vec3(0.00108709, -0.999701, 0.02441);
 	}
 
-	//vis„o de frente
+	//vis√£o de frente
 	if (key == GLFW_KEY_2)
 	{
 		cameraPos = glm::vec3(0.0, 0.0, 3.0);
@@ -379,7 +453,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		cameraFront = glm::vec3(-0.0235599, -0.00523596, -0.999709);
 	}
 
-	//vis„o direita
+	//vis√£o direita
 	if (key == GLFW_KEY_3)
 	{
 		cameraPos = glm::vec3(3.0, 0.0, 0.0);
@@ -387,7 +461,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		cameraFront = glm::vec3(-0.99, -0.00523596, 0.062);
 	}
 
-	//vis„o traseira
+	//vis√£o traseira
 	if (key == GLFW_KEY_4)
 	{
 		cameraPos = glm::vec3(0.0, 0.0, -3.0);
@@ -395,7 +469,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		cameraFront = glm::vec3(-0.006, -0.007, 0.99);
 	}
 
-	//vis„o esquerda
+	//vis√£o esquerda
 	if (key == GLFW_KEY_5)
 	{
 		cameraPos = glm::vec3(-3.0, 0.0, 0.0);
@@ -403,12 +477,109 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		cameraFront = glm::vec3(0.99, -0.02, -0.03);
 	}
 
-	//vis„o de baixo (sÛ da pra ver o ch„o)
+	//vis√£o de baixo (s√≥ da pra ver o ch√£o)
 	if (key == GLFW_KEY_6)
 	{
 		cameraPos = glm::vec3(0.0, -5.0, 0.0);
 		cameraUp = glm::vec3(0.0, 1.0, 0.0);
 		cameraFront = glm::vec3(-0.001, 0.99, -0.26);
+	}*/
+
+
+	//Ecolha de desenho
+	if (key == GLFW_KEY_Q && action == GLFW_PRESS)
+	{
+		selected -= 2;
+		if (selected < 0) {
+			selected = models.size() - 1;
+		}
+		cout << "Modelo selecionado : " << selected << "‚ßµn";
+	}
+
+	if (key == GLFW_KEY_E && action == GLFW_PRESS)
+	{
+		selected += 2;
+		if (selected > (models.size() - 1)) {
+			selected = 0;
+		}
+		cout << "Modelo selecionado : " << selected << "‚ßµn";
+	}
+
+	//translate
+	if (key == GLFW_KEY_UP)
+	{
+		models[selected].position.z -= 0.1;
+	}
+
+	if (key == GLFW_KEY_DOWN)
+	{
+		models[selected].position.z += 0.1;
+	}
+
+	if (key == GLFW_KEY_LEFT)
+	{
+		models[selected].position.x -= 0.1;
+	}
+
+	if (key == GLFW_KEY_RIGHT)
+	{
+		models[selected].position.x += 0.1;
+	}
+
+	if (key == GLFW_KEY_RIGHT_SHIFT)
+	{
+		models[selected].position.y += 0.1;
+	}
+
+	if (key == GLFW_KEY_RIGHT_CONTROL)
+	{
+		models[selected].position.y -= 0.1;
+	}
+
+	//scale
+	if (key == GLFW_KEY_O)
+	{
+		models[selected].scale.x -= 0.1;
+		models[selected].scale.y -= 0.1;
+		models[selected].scale.z -= 0.1;
+	}
+	if (key == GLFW_KEY_P)
+	{
+		models[selected].scale.x += 0.1;
+		models[selected].scale.y += 0.1;
+		models[selected].scale.z += 0.1;
+	}
+
+	//rotation
+	if (key == GLFW_KEY_F)
+	{
+		models[selected].axis = glm::vec3(0.0, 0.0, 1.0);
+		models[selected].angle += 0.5;
+	}
+	if (key == GLFW_KEY_G)
+	{
+		models[selected].axis = glm::vec3(0.0, 0.0, 1.0);
+		models[selected].angle -= 0.5;
+	}
+	if (key == GLFW_KEY_H)
+	{
+		models[selected].axis = glm::vec3(0.0, 1.0, 0.0);
+		models[selected].angle += 0.5;
+	}
+	if (key == GLFW_KEY_J)
+	{
+		models[selected].axis = glm::vec3(0.0, 1.0, 0.0);
+		models[selected].angle -= 0.5;
+	}
+	if (key == GLFW_KEY_K)
+	{
+		models[selected].axis = glm::vec3(1.0, 0.0, 0.0);
+		models[selected].angle += 0.5;
+	}
+	if (key == GLFW_KEY_L)
+	{
+		models[selected].axis = glm::vec3(1.0, 0.0, 0.0);
+		models[selected].angle -= 0.5;
 	}
 
 }
@@ -448,11 +619,11 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 }
 
 
-// Esta funÁ„o est· bastante harcoded - objetivo È criar os buffers que armazenam a 
-// geometria de um tri‚ngulo
-// Apenas atributo coordenada nos vÈrtices
+// Esta fun√ß√£o est√° bastante harcoded - objetivo √© criar os buffers que armazenam a 
+// geometria de um tri√¢ngulo
+// Apenas atributo coordenada nos v√©rtices
 // 1 VBO com as coordenadas, VAO com apenas 1 ponteiro para atributo
-// A funÁ„o retorna o identificador do VAO
+// A fun√ß√£o retorna o identificador do VAO
 
 int loadOBJ(string filePath, int& nVerts)
 {
@@ -539,6 +710,7 @@ int loadOBJ(string filePath, int& nVerts)
 	else
 	{
 		cout << "Problema ao encontrar o arquivo " << filePath << endl;
+		return -1;
 	}
 
 
@@ -580,4 +752,19 @@ int loadOBJ(string filePath, int& nVerts)
 
 	return VAO;
 
+}
+
+vector <string> readModels() {
+	vector <string> modelNames;
+	int howManyModels;
+	cout << "Quantos modelos voce quer carregar?";
+	cin >> howManyModels;
+	
+	for (int i = 0; i < howManyModels; i++) {
+		string modelName;
+		cout << "Qual eh o modelo #" << i << " ?";
+		cin >> modelName;
+		modelNames.push_back(modelName);
+	}
+	return modelNames;
 }

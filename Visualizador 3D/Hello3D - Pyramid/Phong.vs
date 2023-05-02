@@ -9,6 +9,7 @@ layout (location = 3) in vec3 normal;
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
+uniform vec3 inputColor;
 
 out vec3 finalColor;
 out vec3 scaledNormal;
@@ -18,7 +19,7 @@ void main()
 {
 	//...pode ter mais linhas de c�digo aqui!
 	gl_Position = projection * view * model * vec4(position, 1.0);
-	finalColor = color;
+	finalColor = inputColor;
 	//Vetor normal escalada
 	scaledNormal = normal; // mat3(transpose(inverse(model))) * normal;
 	//Posi��o do v�rtice com a transforma��o do objeto 

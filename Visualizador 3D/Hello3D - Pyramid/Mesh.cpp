@@ -1,7 +1,6 @@
 #include "Mesh.h"
-#include "Shader.h"
 
-void Mesh::initialize(GLuint VAO, int nVertices, Shader* shader, glm::vec3 position, glm::vec3 scale, float angle, glm::vec3 axis)
+void Mesh::initialize(GLuint VAO, int nVertices, Shader* shader, glm::vec3 position, glm::vec3 color, glm::vec3 scale, float angle, glm::vec3 axis)
 {
 	this->VAO = VAO;
 	this->nVertices = nVertices;
@@ -10,16 +9,18 @@ void Mesh::initialize(GLuint VAO, int nVertices, Shader* shader, glm::vec3 posit
 	this->scale = scale;
 	this->angle = angle;
 	this->axis = axis;
-
+	this->color = color;
 }
 
 void Mesh::update()
 {
-	glm::mat4 model = glm::mat4(1); //matriz identidade
+	glm::mat4 model = glm::mat4(1);
 	model = glm::translate(model, position);
 	model = glm::rotate(model, glm::radians(angle), axis);
 	model = glm::scale(model, scale);
 	shader->setMat4("model", glm::value_ptr(model));
+	shader->setVec3("inputColor", color.r, color.g, color.b);
+
 }
 
 void Mesh::draw()
