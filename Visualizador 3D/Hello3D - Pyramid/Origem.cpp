@@ -42,7 +42,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 vector <string> readModels();
 
 // Protótipos das funções
-int loadOBJ(string filepath, int& nVerts);
+int loadOBJ(string filepath, int& nVerts, glm::vec3 color);
 
 // Dimensões da janela (pode ser alterado em tempo de execução)
 const GLuint WIDTH = 1200, HEIGHT = 1200;
@@ -83,6 +83,7 @@ vector <GLuint> indices;
 vector <glm::vec3> normals;
 vector <glm::vec2> texCoord;
 vector <Mesh> models;
+vector <int> numberOfVertices;
 
 int selected = 0;
 
@@ -176,11 +177,12 @@ int main()
 	shader.setVec3("lightPos", 10, 5, 0);
 	shader.setVec3("lightColor", 5.0f, 5.0f, 5.0f);
 
+	int nVerts;
+
 	vector <string> modelNames = readModels();
 	GLuint VAO;
 	for (int i = 0; i < modelNames.size(); i++) {
-		int nVerts;
-		VAO = loadOBJ("../" + modelNames[i], nVerts);
+		VAO = loadOBJ("../" + modelNames[i], nVerts, glm::vec3(0.46, 0.38, 0.16));
 		if (VAO != -1) {
 			Mesh mesh;
 			mesh.initialize(VAO, nVerts, &shader, glm::vec3(3.0 * i, 0, 0.0), glm::vec3(0.46, 0.38, 0.16));
@@ -348,6 +350,7 @@ int main()
 	}
 	// Pede pra OpenGL desalocar os buffers
 	glDeleteVertexArrays(1, &VAO);
+	
 	// Finaliza a execução da GLFW, limpando os recursos alocados por ela
 	glfwTerminate();
 	return 0;
@@ -491,9 +494,9 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	{
 		selected -= 2;
 		if (selected < 0) {
-			selected = models.size() - 1;
+			selected = models.size();
 		}
-		cout << "Modelo selecionado : " << selected << "⧵n";
+		cout << "Modelo selecionado : " << selected << "\n";
 	}
 
 	if (key == GLFW_KEY_E && action == GLFW_PRESS)
@@ -502,7 +505,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		if (selected > (models.size() - 1)) {
 			selected = 0;
 		}
-		cout << "Modelo selecionado : " << selected << "⧵n";
+		cout << "Modelo selecionado : " << selected << "\n";
 	}
 
 	//translate
@@ -625,16 +628,21 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 // 1 VBO com as coordenadas, VAO com apenas 1 ponteiro para atributo
 // A função retorna o identificador do VAO
 
-int loadOBJ(string filePath, int& nVerts)
+int loadOBJ(string filepath, int& nVerts, glm::vec3 color)
 {
-	ifstream inputFile;
-	inputFile.open(filePath);
-	vector <GLfloat> vertbuffer;
+	vector <Vertex> vertices;
+	vector <GLuint> indices;
+	vector <glm::vec2> texCoords;
+	vector <glm::vec3> normals;
+	vector <GLfloat> vbuffer;
 
+	ifstream inputFile;
+	inputFile.open(filepath.c_str());
 	if (inputFile.is_open())
 	{
 		char line[100];
 		string sline;
+
 
 
 		while (!inputFile.eof())
@@ -643,116 +651,141 @@ int loadOBJ(string filePath, int& nVerts)
 			sline = line;
 
 			string word;
-			istringstream ssline(sline);
 
+			istringstream ssline(line);
 			ssline >> word;
 
+			//cout << word << " ";
 			if (word == "v")
 			{
 				Vertex v;
+
 				ssline >> v.position.x >> v.position.y >> v.position.z;
-				v.color.r = 0.46; v.color.g = 0.38; v.color.b = 0.16;
+				v.color.r = color.r;  v.color.g = color.g;  v.color.b = color.b;
+
 				vertices.push_back(v);
 			}
 			if (word == "vt")
 			{
 				glm::vec2 vt;
+
 				ssline >> vt.s >> vt.t;
-				texCoord.push_back(vt);
+
+				texCoords.push_back(vt);
 			}
 			if (word == "vn")
 			{
 				glm::vec3 vn;
+
 				ssline >> vn.x >> vn.y >> vn.z;
+
 				normals.push_back(vn);
 			}
-			else if (word == "f")
+			if (word == "f")
 			{
 				string tokens[3];
+
+				ssline >> tokens[0] >> tokens[1] >> tokens[2];
+
 				for (int i = 0; i < 3; i++)
 				{
-					ssline >> tokens[i];
+					//Recuperando os indices de v
 					int pos = tokens[i].find("/");
 					string token = tokens[i].substr(0, pos);
 					int index = atoi(token.c_str()) - 1;
 					indices.push_back(index);
-					vertbuffer.push_back(vertices[index].position.x);
-					vertbuffer.push_back(vertices[index].position.y);
-					vertbuffer.push_back(vertices[index].position.z);
-					vertbuffer.push_back(vertices[index].color.r);
-					vertbuffer.push_back(vertices[index].color.g);
-					vertbuffer.push_back(vertices[index].color.b);
 
+					vbuffer.push_back(vertices[index].position.x);
+					vbuffer.push_back(vertices[index].position.y);
+					vbuffer.push_back(vertices[index].position.z);
+					vbuffer.push_back(vertices[index].color.r);
+					vbuffer.push_back(vertices[index].color.g);
+					vbuffer.push_back(vertices[index].color.b);
+
+					//Recuperando os indices de vts
 					tokens[i] = tokens[i].substr(pos + 1);
 					pos = tokens[i].find("/");
 					token = tokens[i].substr(0, pos);
-					int indexT = atoi(token.c_str()) - 1;
+					index = atoi(token.c_str()) - 1;
 
-					vertbuffer.push_back(texCoord[indexT].s);
-					vertbuffer.push_back(texCoord[indexT].t);
+					vbuffer.push_back(texCoords[index].s);
+					vbuffer.push_back(texCoords[index].t);
 
+					//Recuperando os indices de vns
 					tokens[i] = tokens[i].substr(pos + 1);
-					token = tokens[i].substr(0, pos);
-					int indexN = atoi(token.c_str()) - 1;
+					index = atoi(tokens[i].c_str()) - 1;
 
-					vertbuffer.push_back(normals[indexN].x);
-					vertbuffer.push_back(normals[indexN].y);
-					vertbuffer.push_back(normals[indexN].z);
-
+					vbuffer.push_back(normals[index].x);
+					vbuffer.push_back(normals[index].y);
+					vbuffer.push_back(normals[index].z);
 				}
-
 			}
 
 		}
 
-		inputFile.close();
 	}
 	else
 	{
-		cout << "Problema ao encontrar o arquivo " << filePath << endl;
-		return -1;
+		cout << "Problema ao encontrar o arquivo " << filepath << endl;
 	}
-
+	inputFile.close();
 
 	GLuint VBO, VAO;
 
-	nVerts = vertbuffer.size() / 11;
+	nVerts = vbuffer.size() / 11; //Provisório
 
+	//Geração do identificador do VBO
 	glGenBuffers(1, &VBO);
 
+	//Faz a conexão (vincula) do buffer como um buffer de array
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-	glBufferData(GL_ARRAY_BUFFER, vertbuffer.size() * sizeof(GLfloat), vertbuffer.data(), GL_STATIC_DRAW);
+	//Envia os dados do array de floats para o buffer da OpenGl
+	glBufferData(GL_ARRAY_BUFFER, vbuffer.size() * sizeof(GLfloat), vbuffer.data(), GL_STATIC_DRAW);
 
+	//Geração do identificador do VAO (Vertex Array Object)
 	glGenVertexArrays(1, &VAO);
 
+	// Vincula (bind) o VAO primeiro, e em seguida  conecta e seta o(s) buffer(s) de vértices
+	// e os ponteiros para os atributos 
 	glBindVertexArray(VAO);
 
-	//Pos x, y, z
+	//Para cada atributo do vertice, criamos um "AttribPointer" (ponteiro para o atributo), indicando: 
+	// Localização no shader * (a localização dos atributos devem ser correspondentes no layout especificado no vertex shader)
+	// Numero de valores que o atributo tem (por ex, 3 coordenadas xyz) 
+	// Tipo do dado
+	// Se está normalizado (entre zero e um)
+	// Tamanho em bytes 
+	// Deslocamento a partir do byte zero 
+
+	//Atributo posição (x, y, z)
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(0);
 
-	//Cor r, g,b
+	//Atributo cor (r, g, b)
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
 	glEnableVertexAttribArray(1);
 
-	//Text coords s, t
+	//Atributo coordenada de textura (s, t)
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
 	glEnableVertexAttribArray(2);
 
-	//Normal x, y, z
+	//Atributo normal do vértice (x, y, z)
 	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (GLvoid*)(8 * sizeof(GLfloat)));
 	glEnableVertexAttribArray(3);
 
 
+	// Observe que isso é permitido, a chamada para glVertexAttribPointer registrou o VBO como o objeto de buffer de vértice 
+	// atualmente vinculado - para que depois possamos desvincular com segurança
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	// Desvincula o VAO
+	// Desvincula o VAO (é uma boa prática desvincular qualquer buffer ou array para evitar bugs medonhos)
 	glBindVertexArray(0);
 
 	return VAO;
 
 }
+
 
 vector <string> readModels() {
 	vector <string> modelNames;
