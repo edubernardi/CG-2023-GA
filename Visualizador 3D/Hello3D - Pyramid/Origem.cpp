@@ -338,7 +338,7 @@ int main()
 				models[i].color = glm::vec3(0.1, 0.1, 0.3);
 			}
 			else {
-				models[i].color = glm::vec3(0.46, 0.38, 0.16);
+				models[i].color = models[i].defaultColor;
 			}
 			models[i].update();
 			models[i].draw();
@@ -583,6 +583,23 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	{
 		models[selected].axis = glm::vec3(1.0, 0.0, 0.0);
 		models[selected].angle -= 0.5;
+	}
+	if (key == GLFW_KEY_C && action == GLFW_PRESS)
+	{
+		double r;
+		double g;
+		double b;
+
+		cout << "Valor r (0 - 1.0): ";
+		cin >> r;
+
+		cout << "Valor g (0 - 1.0): ";
+		cin >> g;
+
+		cout << "Valor b (0 - 1.0): ";
+		cin >> b;
+
+		models[selected].defaultColor = glm::vec3(r, g, b);
 	}
 
 }

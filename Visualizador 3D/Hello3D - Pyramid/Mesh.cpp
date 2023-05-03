@@ -10,6 +10,7 @@ void Mesh::initialize(GLuint VAO, int nVertices, Shader* shader, glm::vec3 posit
 	this->angle = angle;
 	this->axis = axis;
 	this->color = color;
+	this->defaultColor = color;
 }
 
 void Mesh::update()

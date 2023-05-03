@@ -22,6 +22,7 @@ public:
 	glm::vec3 axis;
 	glm::vec3 scale;
 	glm::vec3 color;
+	glm::vec3 defaultColor;
 	Shader* shader;
 
 };
