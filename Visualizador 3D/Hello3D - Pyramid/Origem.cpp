@@ -87,6 +87,10 @@ vector <int> numberOfVertices;
 
 int selected = 0;
 
+double axisX = 1.0;
+double axisY = 1.0;
+double axisZ = 1.0;
+
 
 // Função MAIN
 int main()
@@ -231,96 +235,6 @@ int main()
 
 		float angle = (GLfloat)glfwGetTime() * 2;
 
-
-
-		/*
-		int i = 0;
-
-		while (i <= 2) {
-			if (opcao[i] == 7) {
-
-				//Translação
-				if (translateF) {
-
-					desenho[0].initialize(VAO, nVerts, &shader, glm::vec3(1.0, 0.0, 0.0));
-					i++;
-				}
-				else if (translateG)
-				{
-					desenho[0].initialize(VAO, nVerts, &shader, glm::vec3(0.0, 1.0, 0.0));
-					i++;
-				}
-				else if (translateH)
-				{
-					desenho[0].initialize(VAO, nVerts, &shader, glm::vec3(0.0, 0.0, 1.0));
-					i++;
-				}
-
-				//Rotação
-				if (rotateX) {
-
-					desenho[0].initialize(VAO, nVerts, &shader, glm::vec3(0.0, 0.0, 0.0), glm::vec3(1.0, 1.0, 1.0), angle, glm::vec3(1.0f, 0.0f, 0.0f));
-					i++;
-				}
-				else if (rotateY)
-				{
-					desenho[0].initialize(VAO, nVerts, &shader, glm::vec3(0.0, 0.0, 0.0), glm::vec3(1.0, 1.0, 1.0), angle, glm::vec3(0.0f, 1.0f, 0.0f));
-					i++;
-				}
-				else if (rotateZ)
-				{
-					desenho[0].initialize(VAO, nVerts, &shader, glm::vec3(0.0, 0.0, 0.0), glm::vec3(1.0, 1.0, 1.0), angle, glm::vec3(0.0f, 0.0f, 1.0f));
-					i++;
-				}
-			}
-
-			else if (opcao[i] == 8) {
-
-				//Translação
-				if (translateF)
-				{
-					desenho[1].initialize(VAO, nVerts, &shader, glm::vec3(3.0, 0.0, 0.0));
-					i++;
-				}
-
-				else if (translateG)
-				{
-					desenho[1].initialize(VAO, nVerts, &shader, glm::vec3(0.0, 3.0, 0.0));
-					i++;
-				}
-
-				else if (translateH)
-				{
-					desenho[1].initialize(VAO, nVerts, &shader, glm::vec3(0.0, 0.0, 3.0));
-					i++;
-				}
-
-
-				//Rotação
-				if (rotateX)
-				{
-					desenho[1].initialize(VAO, nVerts, &shader, glm::vec3(3.0, 0.0, 0.0), glm::vec3(1.0, 1.0, 1.0), angle, glm::vec3(1.0f, 0.0f, 0.0f));
-					i++;
-				}
-
-				else if (rotateY)
-				{
-					desenho[1].initialize(VAO, nVerts, &shader, glm::vec3(3.0, 0.0, 0.0), glm::vec3(1.0, 1.0, 1.0), angle, glm::vec3(0.0f, 1.0f, 0.0f));
-					i++;
-				}
-
-				else if (rotateZ)
-				{
-					desenho[1].initialize(VAO, nVerts, &shader, glm::vec3(3.0, 0.0, 0.0), glm::vec3(1.0, 1.0, 1.0), angle, glm::vec3(0.0f, 0.0f, 1.0f));
-					i++;
-				}
-			}
-			i++;
-		}
-
-
-
-		*/
 		glUniformMatrix4fv(modelLoc, 1, FALSE, glm::value_ptr(model));
 
 		glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
@@ -364,62 +278,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GL_TRUE);
 
-	/*
-
-	if (key == GLFW_KEY_P && (action == GLFW_PRESS))
-	{
-		speed += 0.1;
-	}
-
-	if (key == GLFW_KEY_O && action == GLFW_PRESS)
-	{
-		speed -= 0.1;
-	}
-
-	if (key == GLFW_KEY_X && action == GLFW_PRESS)
-	{
-		rotateX = true;
-		rotateY = false;
-		rotateZ = false;
-	}
-
-	if (key == GLFW_KEY_Y && action == GLFW_PRESS)
-	{
-		rotateX = false;
-		rotateY = true;
-		rotateZ = false;
-	}
-
-	if (key == GLFW_KEY_Z && action == GLFW_PRESS)
-	{
-		rotateX = false;
-		rotateY = false;
-		rotateZ = true;
-	}
-
-
-	if (key == GLFW_KEY_F && action == GLFW_PRESS)
-	{
-		translateF = true;
-		translateG = false;
-		translateH = false;
-	}
-
-	if (key == GLFW_KEY_G && action == GLFW_PRESS)
-	{
-		translateF = false;
-		translateG = true;
-		translateH = false;
-	}
-
-	if (key == GLFW_KEY_H && action == GLFW_PRESS)
-	{
-		translateF = false;
-		translateG = false;
-		translateH = true;
-	}
-	*/
-
 	if (key == GLFW_KEY_W)
 	{
 		cameraPos += cameraFront * float(0.1);
@@ -439,54 +297,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	{
 		cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * float(0.1);
 	}
-	/*
-	//visão superior
-	if (key == GLFW_KEY_1)
-	{
-		cameraPos = glm::vec3(0.0, 5.0, 0.0);
-		cameraUp = glm::vec3(0.0, 1.0, 0.0);
-		cameraFront = glm::vec3(0.00108709, -0.999701, 0.02441);
-	}
-
-	//visão de frente
-	if (key == GLFW_KEY_2)
-	{
-		cameraPos = glm::vec3(0.0, 0.0, 3.0);
-		cameraUp = glm::vec3(0.0, 1.0, 0.0);
-		cameraFront = glm::vec3(-0.0235599, -0.00523596, -0.999709);
-	}
-
-	//visão direita
-	if (key == GLFW_KEY_3)
-	{
-		cameraPos = glm::vec3(3.0, 0.0, 0.0);
-		cameraUp = glm::vec3(0.0, 1.0, 0.0);
-		cameraFront = glm::vec3(-0.99, -0.00523596, 0.062);
-	}
-
-	//visão traseira
-	if (key == GLFW_KEY_4)
-	{
-		cameraPos = glm::vec3(0.0, 0.0, -3.0);
-		cameraUp = glm::vec3(0.0, 1.0, 0.0);
-		cameraFront = glm::vec3(-0.006, -0.007, 0.99);
-	}
-
-	//visão esquerda
-	if (key == GLFW_KEY_5)
-	{
-		cameraPos = glm::vec3(-3.0, 0.0, 0.0);
-		cameraUp = glm::vec3(0.0, 1.0, 0.0);
-		cameraFront = glm::vec3(0.99, -0.02, -0.03);
-	}
-
-	//visão de baixo (só da pra ver o chão)
-	if (key == GLFW_KEY_6)
-	{
-		cameraPos = glm::vec3(0.0, -5.0, 0.0);
-		cameraUp = glm::vec3(0.0, 1.0, 0.0);
-		cameraFront = glm::vec3(-0.001, 0.99, -0.26);
-	}*/
 
 
 	//Ecolha de desenho
@@ -554,34 +364,46 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	}
 
 	//rotation
-	if (key == GLFW_KEY_F)
+
+
+
+	if (key == GLFW_KEY_F && action == GLFW_PRESS)
 	{
-		models[selected].axis = glm::vec3(0.0, 0.0, 1.0);
-		models[selected].angle += 0.5;
+		if (axisX == 0.0) {
+			axisX = 1.0;
+		}
+		else {
+			axisX = 0.0;
+		}
 	}
-	if (key == GLFW_KEY_G)
+	if (key == GLFW_KEY_G && action == GLFW_PRESS)
 	{
-		models[selected].axis = glm::vec3(0.0, 0.0, 1.0);
-		models[selected].angle -= 0.5;
+		if (axisY == 0.0) {
+			axisY = 1.0;
+		}
+		else {
+			axisY = 0.0;
+		}
 	}
-	if (key == GLFW_KEY_H)
+	if (key == GLFW_KEY_H && action == GLFW_PRESS)
 	{
-		models[selected].axis = glm::vec3(0.0, 1.0, 0.0);
-		models[selected].angle += 0.5;
+		if (axisZ == 0.0) {
+			axisZ = 1.0;
+		}
+		else {
+			axisZ = 0.0;
+		}
 	}
-	if (key == GLFW_KEY_J)
-	{
-		models[selected].axis = glm::vec3(0.0, 1.0, 0.0);
-		models[selected].angle -= 0.5;
-	}
+
 	if (key == GLFW_KEY_K)
 	{
-		models[selected].axis = glm::vec3(1.0, 0.0, 0.0);
+		models[selected].axis = glm::vec3(axisX, axisY, axisZ);
 		models[selected].angle += 0.5;
 	}
 	if (key == GLFW_KEY_L)
 	{
-		models[selected].axis = glm::vec3(1.0, 0.0, 0.0);
+
+		models[selected].axis = glm::vec3(axisX, axisY, axisZ);
 		models[selected].angle -= 0.5;
 	}
 	if (key == GLFW_KEY_C && action == GLFW_PRESS)
@@ -814,6 +636,7 @@ vector <string> readModels() {
 		string modelName;
 		cout << "Qual eh o modelo #" << i << " ?";
 		cin >> modelName;
+		modelNames.push_back(modelName);
 		modelNames.push_back(modelName);
 	}
 	return modelNames;
